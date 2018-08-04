@@ -1,0 +1,64 @@
+---
+- name: test
+  hosts: all
+  gather_facts: no
+  connection: local
+  tasks:
+    - name: Create a k8s namespace
+      k8s:
+        username: developer2
+        password: developer2
+        name: mdeneve
+        api_version: v1
+        kind: Project
+        state: present
+
+    - name: Create a Service object from an inline definition
+      k8s:
+        state: present
+        definition:
+          apiVersion: v1
+          kind: Service
+          metadata:
+            name: web
+            namespace: mdeneve
+            labels:
+              app: galaxy
+              service: web
+          spec:
+            selector:
+              app: galaxy
+              service: web
+            ports:
+            - protocol: TCP
+              targetPort: 8000
+              name: port-8000-tcp
+              port: 8000
+
+    - name: Create a Service object by reading the definition from a file
+      k8s:
+        state: present
+        namespace: mdeneve
+        src: service.yml
+
+    - name: Create a imageStream from a file
+      k8s:
+        state: present
+        namespace: mdeneve
+        src: imageStream.yml
+
+    - name: Get an existing Service object
+      k8s:
+        api_version: v1
+        kind: Service
+        name: web
+        namespace: mdeneve
+      register: web_service
+
+    - name: Remove an existing Service object
+      k8s:
+        state: absent
+        api_version: v1
+        kind: Service
+        namespace: mdeneve
+        name: web
